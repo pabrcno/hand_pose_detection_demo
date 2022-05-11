@@ -4,30 +4,8 @@
 /* eslint-disable guard-for-in */
 /* eslint-disable object-curly-spacing */
 
-import * as scatter from "scatter-gl";
-
-import * as params from "./shared/params";
-import { isMobile } from "./shared/util";
-
-function createScatterGLContext(selectors) {
-  const scatterGLEl = document.querySelector(selectors);
-  return {
-    scatterGLEl,
-    scatterGL: new scatter.ScatterGL(scatterGLEl, {
-      rotateOnStart: true,
-      selectEnabled: false,
-      styles: { polyline: { defaultOpacity: 1, deselectedOpacity: 1 } },
-    }),
-    scatterGLHasInitialized: false,
-  };
-}
-
-const scatterGLCtxtLeftHand = createScatterGLContext(
-  "#scatter-gl-container-left"
-);
-const scatterGLCtxtRightHand = createScatterGLContext(
-  "#scatter-gl-container-right"
-);
+import * as params from "./params";
+import { isMobile } from "./util";
 
 export class Camera {
   constructor() {
@@ -78,8 +56,8 @@ export class Camera {
 
     camera.video.play();
 
-    const videoWidth = camera.video.videoWidth;
-    const videoHeight = camera.video.videoHeight;
+    const videoWidth = "100vw";
+    const videoHeight = "100vh";
     // Must set below two lines, otherwise video element doesn't show.
     camera.video.width = videoWidth;
     camera.video.height = videoHeight;
@@ -87,22 +65,11 @@ export class Camera {
     camera.canvas.width = videoWidth;
     camera.canvas.height = videoHeight;
     const canvasContainer = document.querySelector(".canvas-wrapper");
-    canvasContainer.style = `width: ${videoWidth}px; height: ${videoHeight}px`;
+    canvasContainer.style = `width: ${videoWidth}px; height: ${videoHeight}px; position: absolute; background-color: #000;`;
 
     // Because the image from camera is mirrored, need to flip horizontally.
     camera.ctx.translate(camera.video.videoWidth, 0);
     camera.ctx.scale(-1, 1);
-
-    for (const ctxt of [scatterGLCtxtLeftHand, scatterGLCtxtRightHand]) {
-      ctxt.scatterGLEl.style = `width: ${videoWidth / 2}px; height: ${
-        videoHeight / 2
-      }px;`;
-      ctxt.scatterGL.resize();
-
-      ctxt.scatterGLEl.style.display = params.STATE.modelConfig.render3D
-        ? "inline-block"
-        : "none";
-    }
 
     return camera;
   }

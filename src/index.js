@@ -7,7 +7,7 @@
 
 import "@tensorflow/tfjs-backend-webgl";
 import * as mpHands from "@mediapipe/hands";
-
+import * as params from "./params";
 import * as tfjsWasm from "@tensorflow/tfjs-backend-wasm";
 
 tfjsWasm.setWasmPaths(
@@ -17,16 +17,12 @@ tfjsWasm.setWasmPaths(
 import * as handdetection from "@tensorflow-models/hand-pose-detection";
 
 import { Camera } from "./camera";
-import { setupDatGui } from "./option_panel";
-import { STATE } from "./shared/params";
-import { setupStats } from "./shared/stats_panel";
-import { setBackendAndEnvFlags } from "./shared/util";
+import { STATE } from "./params";
 
-let detector, camera, stats;
-let startInferenceTime,
-  numInferences = 0;
-let inferenceTimeSum = 0,
-  lastPanelUpdate = 0;
+import { setBackendAndEnvFlags } from "./util";
+
+let detector;
+let camera;
 let rafId;
 
 async function createDetector() {
@@ -83,29 +79,8 @@ async function checkGuiUpdate() {
   }
 }
 
-function beginEstimateHandsStats() {
-  startInferenceTime = (performance || Date).now();
-}
-
-function endEstimateHandsStats() {
-  const endInferenceTime = (performance || Date).now();
-  inferenceTimeSum += endInferenceTime - startInferenceTime;
-  ++numInferences;
-
-  const panelUpdateMilliseconds = 1000;
-  if (endInferenceTime - lastPanelUpdate >= panelUpdateMilliseconds) {
-    const averageInferenceTime = inferenceTimeSum / numInferences;
-    inferenceTimeSum = 0;
-    numInferences = 0;
-    stats.customFpsPanel.update(
-      1000.0 / averageInferenceTime,
-      120 /* maxValue */
-    );
-    lastPanelUpdate = endInferenceTime;
-  }
-}
 // IMPORTANT!! key function to get handpoints
-async function renderResult() {
+async function handsResult() {
   if (camera.video.readyState < 2) {
     await new Promise((resolve) => {
       camera.video.onloadeddata = () => {
@@ -120,7 +95,6 @@ async function renderResult() {
   // from a URL that does not exist).
   if (detector != null) {
     // FPS only counts the time it takes to finish estimateHands.
-    beginEstimateHandsStats();
 
     // Detectors can throw errors, for example when using custom URLs that
     // contain a model that doesn't provide the expected output.
@@ -133,16 +107,15 @@ async function renderResult() {
       detector = null;
       alert(error);
     }
-    endEstimateHandsStats();
     return hands;
   }
 }
 
-async function renderPrediction() {
+async function handsPrediction() {
   await checkGuiUpdate();
 
   if (!STATE.isModelChanged) {
-    await renderResult();
+    await handsResult();
   }
 
   rafId = requestAnimationFrame(renderPrediction);
@@ -150,15 +123,10 @@ async function renderPrediction() {
 
 async function app() {
   // Gui content will change depending on which model is in the query string.
-  const urlParams = new URLSearchParams(window.location.search);
-  if (!urlParams.has("model")) {
-    alert("Cannot find model in the query string.");
-    return;
-  }
 
-  await setupDatGui(urlParams);
-
-  stats = setupStats();
+  params.STATE.model = handdetection.SupportedModels.MediaPipeHands;
+  const backends = params.MODEL_BACKEND_MAP[params.STATE.model];
+  params.STATE.backend = backends[0];
 
   camera = await Camera.setupCamera(STATE.camera);
 
@@ -166,7 +134,7 @@ async function app() {
 
   detector = await createDetector();
 
-  renderPrediction();
+  handsPrediction();
 }
 
 app();
