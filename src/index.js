@@ -107,6 +107,7 @@ async function handsResult() {
       detector = null;
       alert(error);
     }
+    console.log(hands);
     return hands;
   }
 }
@@ -118,7 +119,7 @@ async function handsPrediction() {
     await handsResult();
   }
 
-  rafId = requestAnimationFrame(renderPrediction);
+  rafId = requestAnimationFrame(handsPrediction);
 }
 
 async function app() {

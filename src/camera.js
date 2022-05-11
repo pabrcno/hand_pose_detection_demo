@@ -65,7 +65,7 @@ export class Camera {
     camera.canvas.width = videoWidth;
     camera.canvas.height = videoHeight;
     const canvasContainer = document.querySelector(".canvas-wrapper");
-    canvasContainer.style = `width: ${videoWidth}px; height: ${videoHeight}px; position: absolute; background-color: #000;`;
+    canvasContainer.style = `width: ${videoWidth}px; height: ${videoHeight}px; position: absolute; visibility: hidden; z-index: -1;`;
 
     // Because the image from camera is mirrored, need to flip horizontally.
     camera.ctx.translate(camera.video.videoWidth, 0);
